@@ -1,1 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apex Support AI - Voice Enabled</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 flex items-center justify-center h-screen m-0 font-sans overflow-hidden">
 
+  <!-- Chat Widget Container -->
+  <div class="w-full max-w-md h-[600px] flex flex-col rounded-3xl border border-cyan-500/20 bg-[#0b1120] shadow-[0_0_40px_rgba(6,182,212,0.15)] overflow-hidden">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-white/10 bg-slate-900/50 px-6 py-4 backdrop-blur-md flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <div class="h-3 w-3 rounded-full bg-emerald-500"></div>
+          <div class="absolute inset-0 h-3 w-3 animate-ping rounded-full bg-emerald-400 opacity-75"></div>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold text-white">Apex Assistant</h2>
+          <p id="callStatus" class="text-xs text-slate-400">Online & Ready</p>
+        </div>
+      </div>
+      <!-- Voice Toggle Button -->
+      <button id="voiceToggleBtn" onclick="toggleVoiceMode()" class="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-400 hover:bg-cyan-500/20 transition flex items-center gap-1.5 cursor-pointer">
+        🎙️ <span id="voiceBtnText">Voice: OFF</span>
+      </button>
+    </div>
+
+    <!-- Chat Messages Box -->
+    <div id="chatBox" class="flex-1 overflow-y-auto p-4 space-y-4 text-sm">
+      <div class="flex items-start gap-3">
+        <div class="h-7 w-7 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xs text-cyan-400 font-bold flex-shrink-0">AI</div>
+        <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-white/5 px-4 py-3 text-slate-300 max-w-[80%] leading-relaxed">
+          Hello! Welcome to Apex Dental Clinic. I am your support assistant. How can I help you with your dental care today?
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Form -->
+    <form id="chatForm" class="border-t border-white/10 bg-slate-900/50 p-4 backdrop-blur-md flex gap-2 flex-shrink-0">
+      <input type="text" id="userInput" placeholder="Type or use mic..." autocomplete="off" class="flex-1 rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none">
+      <button type="button" id="micBtn" onclick="startListening()" class="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 text-cyan-400 hover:bg-cyan-500/20 transition text-lg cursor-pointer flex-shrink-0" title="Speak">🎙️</button>
+      <button type="submit" class="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 hover:opacity-90 transition cursor-pointer flex-shrink-0">Send</button>
+    </form>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById("chatBox");
+    const chatForm = document.getElementById("chatForm");
+    const userInput = document.getElementById("userInput");
+    const callStatus = document.getElementById("callStatus");
+    const voiceBtnText = document.getElementById("voiceBtnText");
+
+    let history = [];
+    let isVoiceMode = false;
+
+    function toggleVoiceMode() {
+      isVoiceMode = !isVoiceMode;
+      voiceBtnText.textContent = isVoiceMode ? "Voice: ON" : "Voice: OFF";
+      callStatus.textContent = isVoiceMode ? "🔊 Auto-Speak Active" : "Online & Ready";
+    }
+
+    function startListening() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Voice recognition is not supported in this browser. Try Chrome!");
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.onstart = () => { callStatus.textContent = "Listening..."; };
+      recognition.onresult = (event) => {
+        userInput.value = event.results[0][0].transcript;
+        callStatus.textContent = isVoiceMode ? "🔊 Auto-Speak Active" : "Online & Ready";
+        chatForm.requestSubmit();
+      };
+      recognition.onerror = () => { callStatus.textContent = "Mic error, try again"; };
+      recognition.start();
+    }
+
+    // Professional Text-to-Speech (Strips emojis, asterisks, brackets completely)
+    function speakText(text) {
+      if (!isVoiceMode) return;
+      window.speechSynthesis.cancel();
+      
+      const cleanText = text
+        .replace(/[\u{1F000}-\u{16FFF}]|[\u{1F300}-\u{1F5FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, "")
+        .replace(/[*_\[\]()]/g, "")
+        .trim();
+
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    chatForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const text = userInput.value.trim();
+      if (!text) return;
+
+      chatBox.innerHTML += `
+        <div class="flex items-start justify-end gap-3">
+          <div class="rounded-2xl rounded-tr-sm bg-cyan-600 px-4 py-3 text-white max-w-[80%] leading-relaxed">${text}</div>
+        </div>
+      `;
+      userInput.value = "";
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      const loadingId = "load-" + Date.now();
+      chatBox.innerHTML += `
+        <div id="${loadingId}" class="flex items-start gap-3">
+          <div class="h-7 w-7 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xs text-cyan-400 font-bold flex-shrink-0">AI</div>
+          <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-white/5 px-4 py-3 text-slate-400 italic">Thinking...</div>
+        </div>
+      `;
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      try {
+        const res = await fetch("https://kswvgpflvxjrkawpnizr.supabase.co/functions/v1/smooth-handler", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text, history })
+        });
+        const data = await res.json();
+        
+        document.getElementById(loadingId).remove();
+
+        chatBox.innerHTML += `
+          <div class="flex items-start gap-3">
+            <div class="h-7 w-7 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xs text-cyan-400 font-bold flex-shrink-0">AI</div>
+            <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-white/5 px-4 py-3 text-slate-300 max-w-[80%] leading-relaxed">${data.reply}</div>
+          </div>
+        `;
+
+        history.push({ role: "user", content: text });
+        history.push({ role: "assistant", content: data.reply });
+
+        speakText(data.reply);
+
+      } catch (err) {
+        document.getElementById(loadingId).remove();
+        chatBox.innerHTML += `<p class="text-red-400 text-xs text-center">Connection error.</p>`;
+      }
+      chatBox.scrollTop = chatBox.scrollHeight;
+    };
+  </script>
+</body>
+</html>
