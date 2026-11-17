@@ -122,7 +122,11 @@
       try {
         const res = await fetch("https://kswvgpflvxjrkawpnizr.supabase.co/functions/v1/smooth-handler", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3ZncGxsdnhqcmthd3BuaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyODAwMDAsImV4cCI6MjA1Njg1NjAwMH0.dummy_signature_or_your_real_anon_key",
+            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3ZncGxsdnhqcmthd3BuaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyODAwMDAsImV4cCI6MjA1Njg1NjAwMH0.dummy_signature_or_your_real_anon_key"
+          },
           body: JSON.stringify({ message: text, history })
         });
         const data = await res.json();
