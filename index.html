@@ -23,8 +23,7 @@
           <p id="callStatus" class="text-xs text-slate-400">Online & Ready</p>
         </div>
       </div>
-      <!-- Voice Toggle Button -->
-      <button id="voiceToggleBtn" type="button" onclick="toggleVoiceMode()" class="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-400 hover:bg-cyan-500/20 transition flex items-center gap-1.5 cursor-pointer">
+      <button type="button" onclick="toggleVoiceMode()" class="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-400 hover:bg-cyan-500/20 transition flex items-center gap-1.5 cursor-pointer">
         🎙️ <span id="voiceBtnText">Voice: OFF</span>
       </button>
     </div>
@@ -42,7 +41,7 @@
     <!-- Input Form -->
     <form id="chatForm" class="border-t border-white/10 bg-slate-900/50 p-4 backdrop-blur-md flex gap-2 flex-shrink-0">
       <input type="text" id="userInput" placeholder="Type or use mic..." autocomplete="off" class="flex-1 rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none">
-      <button type="button" id="micBtn" onclick="startListening()" class="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 text-cyan-400 hover:bg-cyan-500/20 transition text-lg cursor-pointer flex-shrink-0" title="Speak">🎙️</button>
+      <button type="button" onclick="startListening()" class="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 text-cyan-400 hover:bg-cyan-500/20 transition text-lg cursor-pointer flex-shrink-0" title="Speak">🎙️</button>
       <button type="submit" class="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 hover:opacity-90 transition cursor-pointer flex-shrink-0">Send</button>
     </form>
   </div>
@@ -66,7 +65,7 @@
     function startListening() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        alert("Voice recognition is not supported in this browser. Try Chrome!");
+        alert("Voice recognition not supported in this browser.");
         return;
       }
       const recognition = new SpeechRecognition();
@@ -77,24 +76,35 @@
         callStatus.textContent = isVoiceMode ? "🔊 Auto-Speak Active" : "Online & Ready";
         chatForm.requestSubmit();
       };
-      recognition.onerror = () => { callStatus.textContent = "Mic error, try again"; };
       recognition.start();
     }
 
-    // Professional Text-to-Speech (Strips emojis, asterisks, brackets completely)
-    function speakText(text) {
-      if (!isVoiceMode) return;
-      window.speechSynthesis.cancel();
-      
-      const cleanText = text
-        .replace(/[\u{1F000}-\u{16FFF}]|[\u{1F300}-\u{1F5FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, "")
-        .replace(/[*_\[\]()]/g, "")
-        .trim();
+    function appendMessage(sender, text, isError = false) {
+      const wrapper = document.createElement("div");
+      wrapper.className = sender === "user" ? "flex items-start justify-end gap-3" : "flex items-start gap-3";
 
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      window.speechSynthesis.speak(utterance);
+      if (sender === "user") {
+        wrapper.innerHTML = `<div class="rounded-2xl rounded-tr-sm bg-cyan-600 px-4 py-3 text-white max-w-[80%] leading-relaxed"></div>`;
+        wrapper.querySelector("div").textContent = text;
+      } else if (isError) {
+        wrapper.innerHTML = `
+          <div class="h-7 w-7 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-xs text-red-400 font-bold flex-shrink-0">!</div>
+          <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-red-500/20 px-4 py-3 text-red-400 max-w-[80%] text-xs">
+            <strong>Error:</strong> <span class="err-text"></span>
+          </div>
+        `;
+        wrapper.querySelector(".err-text").textContent = text;
+      } else {
+        wrapper.innerHTML = `
+          <div class="h-7 w-7 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xs text-cyan-400 font-bold flex-shrink-0">AI</div>
+          <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-white/5 px-4 py-3 text-slate-300 max-w-[80%] leading-relaxed ai-text"></div>
+        `;
+        wrapper.querySelector(".ai-text").textContent = text;
+      }
+
+      chatBox.appendChild(wrapper);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return wrapper;
     }
 
     chatForm.onsubmit = async (e) => {
@@ -102,22 +112,11 @@
       const text = userInput.value.trim();
       if (!text) return;
 
-      chatBox.innerHTML += `
-        <div class="flex items-start justify-end gap-3">
-          <div class="rounded-2xl rounded-tr-sm bg-cyan-600 px-4 py-3 text-white max-w-[80%] leading-relaxed">${text}</div>
-        </div>
-      `;
+      appendMessage("user", text);
       userInput.value = "";
-      chatBox.scrollTop = chatBox.scrollHeight;
 
-      const loadingId = "load-" + Date.now();
-      chatBox.innerHTML += `
-        <div id="${loadingId}" class="flex items-start gap-3">
-          <div class="h-7 w-7 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xs text-cyan-400 font-bold flex-shrink-0">AI</div>
-          <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-white/5 px-4 py-3 text-slate-400 italic">Thinking...</div>
-        </div>
-      `;
-      chatBox.scrollTop = chatBox.scrollHeight;
+      const loadingEl = appendMessage("ai", "Thinking...");
+      loadingEl.querySelector(".ai-text").className = "rounded-2xl rounded-tl-sm bg-slate-900 border border-white/5 px-4 py-3 text-slate-400 italic ai-text";
 
       try {
         const res = await fetch("https://kswvgpflvxjrkawpnizr.supabase.co/functions/v1/smooth-handler", {
@@ -129,34 +128,36 @@
           },
           body: JSON.stringify({ message: text, history })
         });
-        const data = await res.json();
+        
+        const rawText = await res.text();
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch (jsonErr) {
+          throw new Error("Invalid JSON: " + rawText);
+        }
+        
+        loadingEl.remove();
 
-        document.getElementById(loadingId).remove();
+        if (!res.ok) {
+          throw new Error(data.error || data.message || JSON.stringify(data));
+        }
 
-        chatBox.innerHTML += `
-          <div class="flex items-start gap-3">
-            <div class="h-7 w-7 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xs text-cyan-400 font-bold flex-shrink-0">AI</div>
-            <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-white/5 px-4 py-3 text-slate-300 max-w-[80%] leading-relaxed">${data.reply}</div>
-          </div>
-        `;
+        const replyText = data.reply || data.message || "Response received.";
+        appendMessage("ai", replyText);
 
         history.push({ role: "user", content: text });
-        history.push({ role: "assistant", content: data.reply });
+        history.push({ role: "assistant", content: replyText });
 
-        speakText(data.reply);
+        if (isVoiceMode) {
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(new SpeechSynthesisUtterance(replyText.replace(/[*_\[\]()]/g, "")));
+        }
 
       } catch (err) {
-        document.getElementById(loadingId).remove();
-        chatBox.innerHTML += `
-          <div class="flex items-start gap-3">
-            <div class="h-7 w-7 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-xs text-red-400 font-bold flex-shrink-0">!</div>
-            <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-red-500/20 px-4 py-3 text-red-400 max-w-[80%] text-xs">
-              <strong>Error:</strong> ${err.message}
-            </div>
-          </div>
-        `;
+        loadingEl.remove();
+        appendMessage("ai", err.message, true);
       }
-      chatBox.scrollTop = chatBox.scrollHeight;
     };
   </script>
 </body>
