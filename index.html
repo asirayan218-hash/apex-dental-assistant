@@ -6,7 +6,8 @@
   <title>Apex Dental Clinic - AI Receptionist</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 flex items-center justify-center h-[100dvh] m-0 font-sans overflow-hidden"
+<body class="bg-slate-950 text-slate-100 flex items-center justify-center h-[100dvh] m-0 font-sans overflow-hidden">
+
   <div class="w-full max-w-md h-full sm:h-[600px] flex flex-col sm:rounded-3xl border border-cyan-500/20 bg-[#0b1120] shadow-xl overflow-hidden">
     <!-- Header -->
     <div class="flex items-center justify-between border-b border-white/10 bg-slate-900/50 px-6 py-4">
@@ -76,20 +77,20 @@
         loading.remove();
 
         if (data.error) {
-          throw new Error(data.error);
-        }
+          appendMsg("ai", "Error: " + data.error, true);
+        } else {
+          const replyMsg = data.reply || "No response received";
+          appendMsg("ai", replyMsg);
+          history.push({ role: "user", content: text });
+          history.push({ role: "assistant", content: replyMsg });
 
-        const replyMsg = data.reply || "No response received";
-        appendMsg("ai", replyMsg);
-        history.push({ role: "user", content: text });
-        history.push({ role: "assistant", content: replyMsg });
-
-        if (isVoice) {
-          window.speechSynthesis.speak(new SpeechSynthesisUtterance(replyMsg.replace(/[*_]/g, "")));
+          if (isVoice) {
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(replyMsg.replace(/[*_]/g, "")));
+          }
         }
       } catch (err) {
         loading.remove();
-        appendMsg("ai", "Error: " + err.message, true);
+        appendMsg("ai", "Network Error: " + err.message, true);
       }
     }
 
