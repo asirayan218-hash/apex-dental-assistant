@@ -91,28 +91,45 @@
       window.speechSynthesis.speak(utterance);
     }
 
+    function appendMessage(sender, text, isError = false) {
+      const wrapper = document.createElement("div");
+      wrapper.className = sender === "user" 
+        ? "flex items-start justify-end gap-3" 
+        : "flex items-start gap-3";
+
+      if (sender === "user") {
+        wrapper.innerHTML = `<div class="rounded-2xl rounded-tr-sm bg-cyan-600 px-4 py-3 text-white max-w-[80%] leading-relaxed"></div>`;
+        wrapper.querySelector("div").textContent = text;
+      } else if (isError) {
+        wrapper.innerHTML = `
+          <div class="h-7 w-7 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-xs text-red-400 font-bold flex-shrink-0">!</div>
+          <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-red-500/20 px-4 py-3 text-red-400 max-w-[80%] text-xs">
+            <strong>Error:</strong> <span class="err-text"></span>
+          </div>
+        `;
+        wrapper.querySelector(".err-text").textContent = text;
+      } else {
+        wrapper.innerHTML = `
+          <div class="h-7 w-7 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xs text-cyan-400 font-bold flex-shrink-0">AI</div>
+          <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-white/5 px-4 py-3 text-slate-300 max-w-[80%] leading-relaxed ai-text"></div>
+        `;
+        wrapper.querySelector(".ai-text").textContent = text;
+      }
+
+      chatBox.appendChild(wrapper);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return wrapper;
+    }
+
     async function handleSubmit() {
       const text = userInput.value.trim();
       if (!text) return;
 
-      // 1. User message instantly append hoga
-      chatBox.innerHTML += `
-        <div class="flex items-start justify-end gap-3">
-          <div class="rounded-2xl rounded-tr-sm bg-cyan-600 px-4 py-3 text-white max-w-[80%] leading-relaxed">${text}</div>
-        </div>
-      `;
+      appendMessage("user", text);
       userInput.value = "";
-      chatBox.scrollTop = chatBox.scrollHeight;
 
-      // 2. Loading indicator
-      const loadingId = "load-" + Date.now();
-      chatBox.innerHTML += `
-        <div id="${loadingId}" class="flex items-start gap-3">
-          <div class="h-7 w-7 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xs text-cyan-400 font-bold flex-shrink-0">AI</div>
-          <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-white/5 px-4 py-3 text-slate-400 italic">Thinking...</div>
-        </div>
-      `;
-      chatBox.scrollTop = chatBox.scrollHeight;
+      const loadingEl = appendMessage("ai", "Thinking...");
+      loadingEl.querySelector(".ai-text").className = "rounded-2xl rounded-tl-sm bg-slate-900 border border-white/5 px-4 py-3 text-slate-400 italic ai-text";
 
       try {
         const res = await fetch("https://kswvgpflvxjrkawpnizr.supabase.co/functions/v1/smooth-handler", {
@@ -133,21 +150,14 @@
           throw new Error("Invalid JSON: " + rawText);
         }
         
-        const loadingEl = document.getElementById(loadingId);
-        if (loadingEl) loadingEl.remove();
+        loadingEl.remove();
 
         if (!res.ok) {
           throw new Error(data.error || data.message || JSON.stringify(data));
         }
 
         const replyText = data.reply || data.message || "Response received.";
-
-        chatBox.innerHTML += `
-          <div class="flex items-start gap-3">
-            <div class="h-7 w-7 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xs text-cyan-400 font-bold flex-shrink-0">AI</div>
-            <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-white/5 px-4 py-3 text-slate-300 max-w-[80%] leading-relaxed">${replyText}</div>
-          </div>
-        `;
+        appendMessage("ai", replyText);
 
         history.push({ role: "user", content: text });
         history.push({ role: "assistant", content: replyText });
@@ -155,19 +165,9 @@
         speakText(replyText);
 
       } catch (err) {
-        const loadingEl = document.getElementById(loadingId);
-        if (loadingEl) loadingEl.remove();
-
-        chatBox.innerHTML += `
-          <div class="flex items-start gap-3">
-            <div class="h-7 w-7 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-xs text-red-400 font-bold flex-shrink-0">!</div>
-            <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-red-500/20 px-4 py-3 text-red-400 max-w-[80%] text-xs">
-              <strong>Error:</strong> ${err.message}
-            </div>
-          </div>
-        `;
+        loadingEl.remove();
+        appendMessage("ai", err.message, true);
       }
-      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     chatForm.onsubmit = (e) => {
