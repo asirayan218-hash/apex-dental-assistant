@@ -6,10 +6,10 @@
   <title>Apex Support AI - Voice Enabled</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 flex items-center justify-center h-screen m-0 font-sans overflow-hidden">
+<body class="bg-slate-950 text-slate-100 flex items-center justify-center h-[100dvh] m-0 font-sans overflow-hidden">
 
   <!-- Chat Widget Container -->
-  <div class="w-full max-w-md h-[600px] flex flex-col rounded-3xl border border-cyan-500/20 bg-[#0b1120] shadow-[0_0_40px_rgba(6,182,212,0.15)] overflow-hidden">
+  <div class="w-full max-w-md h-full sm:h-[600px] flex flex-col sm:rounded-3xl border border-cyan-500/20 bg-[#0b1120] shadow-[0_0_40px_rgba(6,182,212,0.15)] overflow-hidden">
     
     <!-- Header -->
     <div class="flex items-center justify-between border-b border-white/10 bg-slate-900/50 px-6 py-4 backdrop-blur-md flex-shrink-0">
@@ -38,17 +38,16 @@
       </div>
     </div>
 
-    <!-- Input Form -->
-    <form id="chatForm" class="border-t border-white/10 bg-slate-900/50 p-4 backdrop-blur-md flex gap-2 flex-shrink-0">
+    <!-- Input Bar -->
+    <div class="border-t border-white/10 bg-slate-900/50 p-4 backdrop-blur-md flex gap-2 flex-shrink-0">
       <input type="text" id="userInput" placeholder="Type or use mic..." autocomplete="off" class="flex-1 rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none">
       <button type="button" onclick="startListening()" class="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 text-cyan-400 hover:bg-cyan-500/20 transition text-lg cursor-pointer flex-shrink-0" title="Speak">🎙️</button>
-      <button type="submit" class="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 hover:opacity-90 transition cursor-pointer flex-shrink-0">Send</button>
-    </form>
+      <button type="button" onclick="sendMessage()" class="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 hover:opacity-90 transition cursor-pointer flex-shrink-0">Send</button>
+    </div>
   </div>
 
   <script>
     const chatBox = document.getElementById("chatBox");
-    const chatForm = document.getElementById("chatForm");
     const userInput = document.getElementById("userInput");
     const callStatus = document.getElementById("callStatus");
     const voiceBtnText = document.getElementById("voiceBtnText");
@@ -65,7 +64,7 @@
     function startListening() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        alert("Voice recognition not supported in this browser.");
+        alert("Voice recognition not supported.");
         return;
       }
       const recognition = new SpeechRecognition();
@@ -74,7 +73,7 @@
       recognition.onresult = (event) => {
         userInput.value = event.results[0][0].transcript;
         callStatus.textContent = isVoiceMode ? "🔊 Auto-Speak Active" : "Online & Ready";
-        chatForm.requestSubmit();
+        sendMessage();
       };
       recognition.start();
     }
@@ -107,8 +106,7 @@
       return wrapper;
     }
 
-    chatForm.onsubmit = async (e) => {
-      e.preventDefault();
+    async function sendMessage() {
       const text = userInput.value.trim();
       if (!text) return;
 
@@ -116,7 +114,10 @@
       userInput.value = "";
 
       const loadingEl = appendMessage("ai", "Thinking...");
-      loadingEl.querySelector(".ai-text").className = "rounded-2xl rounded-tl-sm bg-slate-900 border border-white/5 px-4 py-3 text-slate-400 italic ai-text";
+      const aiTextDiv = loadingEl.querySelector(".ai-text");
+      if(aiTextDiv) {
+        aiTextDiv.className = "rounded-2xl rounded-tl-sm bg-slate-900 border border-white/5 px-4 py-3 text-slate-400 italic ai-text";
+      }
 
       try {
         const res = await fetch("https://kswvgpflvxjrkawpnizr.supabase.co/functions/v1/smooth-handler", {
@@ -133,17 +134,17 @@
         let data;
         try {
           data = JSON.parse(rawText);
-        } catch (jsonErr) {
-          throw new Error("Invalid JSON: " + rawText);
+        } catch (e) {
+          throw new Error("Server Response (Not JSON): " + rawText);
         }
-        
+
         loadingEl.remove();
 
         if (!res.ok) {
           throw new Error(data.error || data.message || JSON.stringify(data));
         }
 
-        const replyText = data.reply || data.message || "Response received.";
+        const replyText = data.reply || data.message || "Done";
         appendMessage("ai", replyText);
 
         history.push({ role: "user", content: text });
@@ -158,7 +159,13 @@
         loadingEl.remove();
         appendMessage("ai", err.message, true);
       }
-    };
+    }
+
+    userInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
   </script>
 </body>
 </html>
