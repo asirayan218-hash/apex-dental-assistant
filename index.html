@@ -76,18 +76,21 @@
         const data = await res.json();
         loading.remove();
 
-        if (!res.ok) throw new Error(data.error || "Server Error");
+        if (data.error) {
+          throw new Error(data.error);
+        }
 
-        appendMsg("ai", data.reply);
+        const replyMsg = data.reply || "No response received";
+        appendMsg("ai", replyMsg);
         history.push({ role: "user", content: text });
-        history.push({ role: "assistant", content: data.reply });
+        history.push({ role: "assistant", content: replyMsg });
 
         if (isVoice) {
-          window.speechSynthesis.speak(new SpeechSynthesisUtterance(data.reply.replace(/[*_]/g, "")));
+          window.speechSynthesis.speak(new SpeechSynthesisUtterance(replyMsg.replace(/[*_]/g, "")));
         }
       } catch (err) {
         loading.remove();
-        appendMsg("ai", err.message, true);
+        appendMsg("ai", "Error: " + err.message, true);
       }
     }
 
