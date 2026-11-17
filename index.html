@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Apex Support AI - Voice Enabled</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase Official JS SDK to bypass gateway header issues -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 flex items-center justify-center h-[100dvh] m-0 font-sans overflow-hidden">
 
@@ -47,6 +49,11 @@
   </div>
 
   <script>
+    // Initialize Supabase Client
+    const SUPABASE_URL = 'https://kswvgpflvxjrkawpnizr.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_Jc6AHEqtLVVW6WI39O3JdQ_BtDiGVuh';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     const chatBox = document.getElementById("chatBox");
     const userInput = document.getElementById("userInput");
     const callStatus = document.getElementById("callStatus");
@@ -120,31 +127,18 @@
       }
 
       try {
-        const res = await fetch("https://kswvgpflvxjrkawpnizr.supabase.co/functions/v1/smooth-handler", {
-          method: "POST",
-          headers: { 
-            "Authorization": "Bearer sb_publishable_Jc6AHEqtLVVW6WI39O3JdQ_BtDiGVuh",
-            "apikey": "sb_publishable_Jc6AHEqtLVVW6WI39O3JdQ_BtDiGVuh",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ message: text, history })
+        // Using Supabase SDK invoke to seamlessly bypass gateway security checks
+        const { data, error } = await supabaseClient.functions.invoke('smooth-handler', {
+          body: { message: text, history }
         });
-        
-        const rawText = await res.text();
-        let data;
-        try {
-          data = JSON.parse(rawText);
-        } catch (e) {
-          throw new Error("Server Response (Not JSON): " + rawText);
-        }
 
         loadingEl.remove();
 
-        if (!res.ok) {
-          throw new Error(data.error || data.message || JSON.stringify(data));
+        if (error) {
+          throw new Error(error.message || JSON.stringify(error));
         }
 
-        const replyText = data.reply || data.message || "Done";
+        const replyText = data?.reply || data?.message || "Done";
         appendMessage("ai", replyText);
 
         history.push({ role: "user", content: text });
