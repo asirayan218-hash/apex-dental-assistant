@@ -147,7 +147,14 @@
 
       } catch (err) {
         document.getElementById(loadingId).remove();
-        chatBox.innerHTML += `<p class="text-red-400 text-xs text-center">Connection error.</p>`;
+        chatBox.innerHTML += `
+          <div class="flex items-start gap-3">
+            <div class="h-7 w-7 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-xs text-red-400 font-bold flex-shrink-0">!</div>
+            <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-red-500/20 px-4 py-3 text-red-400 max-w-[80%] text-xs">
+              <strong>Error:</strong> ${err.message}
+            </div>
+          </div>
+        `;
       }
       chatBox.scrollTop = chatBox.scrollHeight;
     };
