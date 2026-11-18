@@ -1,37 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Apex Dental Clinic - AI Receptionist</title>
+  <title>Apex Dental Clinic - AI Assistant</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    .floating { animation: float 4s ease-in-out infinite; }
+    .glass-card { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 flex items-center justify-center h-[100dvh] m-0 font-sans overflow-hidden">
+<body class="bg-[#020617] text-slate-100 flex items-center justify-center h-[100dvh] m-0 font-sans overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-950/40 via-slate-950 to-black">
 
-  <div class="w-full max-w-md h-full sm:h-[600px] flex flex-col sm:rounded-3xl border border-cyan-500/20 bg-[#0b1120] shadow-xl overflow-hidden">
-    <!-- Header -->
-    <div class="flex items-center justify-between border-b border-white/10 bg-slate-900/50 px-6 py-4">
+  <div class="w-full max-w-md h-full sm:h-[680px] flex flex-col sm:rounded-3xl glass-card shadow-2xl shadow-cyan-950/50 overflow-hidden relative">
+    
+    <!-- Top Header -->
+    <div class="flex items-center justify-between border-b border-white/10 bg-slate-900/60 px-6 py-4 z-10">
       <div class="flex items-center gap-3">
-        <div class="h-3 w-3 rounded-full bg-emerald-500"></div>
-        <h2 class="text-sm font-semibold text-white">Apex Dental Assistant</h2>
+        <div class="relative flex h-3 w-3">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+        </div>
+        <div>
+          <h2 class="text-sm font-bold tracking-wide text-white flex items-center gap-1.5">Apex Dental <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-normal">AI Receptionist</span></h2>
+          <p class="text-[10px] text-slate-400">⚡ Secure Backend + Multi-Model Fallback</p>
+        </div>
       </div>
-      <button onclick="toggleVoice()" class="text-xs text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/30">🎙️ <span id="vTxt">OFF</span></button>
+      <button onclick="toggleVoice()" id="voiceBtn" class="text-xs text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 px-3 py-1.5 rounded-full border border-cyan-500/30 transition font-medium flex items-center gap-1">
+        🎙️ Audio: <span id="vTxt">OFF</span>
+      </button>
     </div>
 
-    <!-- Chat Box -->
-    <div id="chatBox" class="flex-1 overflow-y-auto p-4 space-y-4 text-sm">
+    <!-- Chat Messages Container -->
+    <div id="chatBox" class="flex-1 overflow-y-auto p-5 space-y-4 text-sm scroll-smooth z-0">
       <div class="flex items-start gap-3">
-        <div class="h-7 w-7 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xs text-cyan-400 font-bold">AI</div>
-        <div class="rounded-2xl rounded-tl-sm bg-slate-900 border border-white/5 px-4 py-3 text-slate-300 max-w-[80%]">
-          Hello! Welcome to Apex Dental Clinic. How can I help you today?
+        <div class="h-8 w-8 rounded-2xl bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-cyan-500/30 shrink-0 floating">🦷</div>
+        <div class="rounded-2xl rounded-tl-sm bg-slate-900/90 border border-white/10 px-4 py-3 text-slate-200 max-w-[85%] shadow-md leading-relaxed">
+          Asalam-o-Alaikum! Welcome to <strong>Apex Dental Clinic</strong>, Karachi. How can I assist you with your appointment or dental care today? ✨
         </div>
       </div>
     </div>
 
-    <!-- Input Box -->
-    <div class="border-t border-white/10 bg-slate-900/50 p-4 flex gap-2">
-      <input type="text" id="userInput" placeholder="Type a message..." class="flex-1 rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-400">
-      <button onclick="sendMessage()" class="rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-white hover:opacity-90">Send</button>
+    <!-- Quick Action Chips -->
+    <div class="px-4 py-2.5 flex gap-2 overflow-x-auto no-scrollbar border-t border-white/5 bg-slate-900/30">
+      <button onclick="sendPreset('📅 Book an appointment')" class="text-xs bg-slate-800/80 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 px-3.5 py-1.5 rounded-full border border-white/5 whitespace-nowrap transition">📅 Book Appointment</button>
+      <button onclick="sendPreset('📍 Clinic timings & location')" class="text-xs bg-slate-800/80 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 px-3.5 py-1.5 rounded-full border border-white/5 whitespace-nowrap transition">📍 Location & Timings</button>
+      <button onclick="sendPreset('✨ Teeth whitening charges')" class="text-xs bg-slate-800/80 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 px-3.5 py-1.5 rounded-full border border-white/5 whitespace-nowrap transition">✨ Whitening Charges</button>
+    </div>
+
+    <!-- Input Bar -->
+    <div class="border-t border-white/10 bg-slate-900/80 p-4 flex gap-3 items-center">
+      <input type="text" id="userInput" placeholder="Type your message here..." class="flex-1 rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition placeholder:text-slate-500">
+      <button onclick="sendMessage()" class="rounded-2xl bg-gradient-to-r from-cyan-500 to-teal-500 px-5 py-3 text-sm font-semibold text-white hover:opacity-90 shadow-lg shadow-cyan-500/25 transition active:scale-95 flex items-center justify-center">
+        <svg class="w-4 h-4 rotate-90" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7"></path></svg>
+      </button>
     </div>
   </div>
 
@@ -45,12 +70,23 @@
       document.getElementById("vTxt").textContent = isVoice ? "ON" : "OFF";
     }
 
+    function sendPreset(text) {
+      userInput.value = text;
+      sendMessage();
+    }
+
     function appendMsg(sender, text, isErr = false) {
       const div = document.createElement("div");
-      div.className = sender === "user" ? "flex justify-end gap-3" : "flex gap-3";
-      div.innerHTML = sender === "user" 
-        ? `<div class="bg-cyan-600 text-white px-4 py-3 rounded-2xl rounded-tr-sm max-w-[80%]">${text}</div>`
-        : `<div class="h-7 w-7 rounded-full bg-cyan-500/20 flex items-center justify-center text-xs text-cyan-400 font-bold">AI</div><div class="bg-slate-900 border ${isErr?'border-red-500 text-red-400':'border-white/5 text-slate-300'} px-4 py-3 rounded-2xl rounded-tl-sm max-w-[80%]">${text}</div>`;
+      div.className = sender === "user" ? "flex justify-end gap-3" : "flex gap-3 items-start";
+      
+      if (sender === "user") {
+        div.innerHTML = `<div class="bg-gradient-to-r from-cyan-600 to-teal-600 text-white px-4 py-3 rounded-2xl rounded-tr-sm max-w-[85%] shadow-lg shadow-cyan-900/20">${text}</div>`;
+      } else {
+        div.innerHTML = `
+          <div class="h-8 w-8 rounded-2xl bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-cyan-500/30 shrink-0">🦷</div>
+          <div class="rounded-2xl rounded-tl-sm bg-slate-900/90 border ${isErr ? 'border-red-500/50 text-red-400' : 'border-white/10 text-slate-200'} px-4 py-3 max-w-[85%] shadow-lg leading-relaxed">${text}</div>
+        `;
+      }
       chatBox.appendChild(div);
       chatBox.scrollTop = chatBox.scrollHeight;
       return div;
@@ -59,38 +95,35 @@
     async function sendMessage() {
       const text = userInput.value.trim();
       if (!text) return;
+
       appendMsg("user", text);
       userInput.value = "";
-
-      const loading = appendMsg("ai", "Thinking...");
+      const loading = appendMsg("ai", '<span class="animate-pulse">Thinking... 💭</span>');
 
       try {
-        const res = await fetch("https://kswvgpflvxjrkawpnizr.supabase.co/functions/v1/hello-world", {
+        const res = await fetch("/.netlify/functions/chat", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: text, history })
         });
 
         const data = await res.json();
         loading.remove();
 
-        if (data.error) {
-          appendMsg("ai", "Error: " + data.error, true);
-        } else {
-          const replyMsg = data.reply || "No response received";
-          appendMsg("ai", replyMsg);
-          history.push({ role: "user", content: text });
-          history.push({ role: "assistant", content: replyMsg });
+        if (!res.ok || data.error) throw new Error(data.error || "Server error");
 
-          if (isVoice) {
-            window.speechSynthesis.speak(new SpeechSynthesisUtterance(replyMsg.replace(/[*_]/g, "")));
-          }
+        const replyMsg = data.reply;
+        appendMsg("ai", replyMsg);
+        
+        history.push({ role: "user", content: text });
+        history.push({ role: "assistant", content: replyMsg });
+
+        if (isVoice) {
+          window.speechSynthesis.speak(new SpeechSynthesisUtterance(replyMsg.replace(/[*_#]/g, "")));
         }
       } catch (err) {
         loading.remove();
-        appendMsg("ai", "Network Error: " + err.message, true);
+        appendMsg("ai", "Error: " + err.message, true);
       }
     }
 
